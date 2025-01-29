@@ -194,7 +194,7 @@ def is_in_gaia_mask(ras, decs, clip=True,
     return inmask, fn
 
 
-def quantities_at_positions_in_a_brick(ras, decs, brickname, direc,
+def quantities_at_positions_in_a_brick(ras, decs, brickname, direc, filters,
                                        aprad=0.75):
     """Observational quantities (per-band) at positions in a Legacy Surveys brick.
 
@@ -209,6 +209,9 @@ def quantities_at_positions_in_a_brick(ras, decs, brickname, direc,
     direc : :class:`str`
        The root directory pointing to a set of Legacy-Surveys-like imaging
        files, e.g., /global/cfs/cdirs/cosmo/work/users/dstn/ODIN/xmm-N419/coadd/
+    filters : :class:`list`
+        List of filters for which to retrieve observational quantities, e.g. 
+        ['N419', 'N501', 'N673'].
     aprad : :class:`float`, optional, defaults to 0.75
         Radii in arcsec of aperture for which to derive sky/fiber fluxes.
         Defaults to the DESI fiber radius. If aprad < 1e-8 is passed,
@@ -248,10 +251,10 @@ def quantities_at_positions_in_a_brick(ras, decs, brickname, direc,
     instrum = None
 
     # ADM Some choices for filter names. Default to ODIN filters...
-    filters = ['N419', 'N501', 'N673']
-    # ADM ...different filters if we're using Suprime-Cam.
-    if "suprime" in direc:
-        filters = ['I-A-L427', 'I-A-L464', 'I-A-L484', 'I-A-L505', 'I-A-L527']
+    # filters = ['N419', 'N501', 'N673']
+    # # ADM ...different filters if we're using Suprime-Cam.
+    # if "suprime" in direc:
+    #     filters = ['I-A-L427', 'I-A-L464', 'I-A-L484', 'I-A-L505', 'I-A-L527']
 
     rootdir = os.path.join(direc, 'coadd', brickname[:3], brickname)
     fileform = os.path.join(rootdir, 'legacysurvey-{}-{}-{}.fits.fz')
@@ -334,7 +337,7 @@ def quantities_at_positions_in_a_brick(ras, decs, brickname, direc,
     return qdict
 
 
-def get_quantities_in_a_brick(ramin, ramax, decmin, decmax, brickname, direc,
+def get_quantities_in_a_brick(ramin, ramax, decmin, decmax, brickname, direc, filters,
                               density=100000, dustdir=None, aprad=0.75, seed=1):
     """NOBS, DEPTHS etc. (per-band) for random points in a brick.
 
@@ -347,6 +350,9 @@ def get_quantities_in_a_brick(ramin, ramax, decmin, decmax, brickname, direc,
     direc : :class:`str`
        The root directory of a set of Legacy-Surveys-like imaging files
        e.g., /global/cfs/cdirs/cosmo/work/users/dstn/ODIN/xmm-N419/coadd/
+    filters : :class:`list`
+        List of filters for which to retrieve observational quantities, e.g.
+        ['N419', 'N501', 'N673'].
     density : :class:`int`, optional, defaults to 100,000
         Number of random points to return per sq. deg. As a typical brick
         is ~0.25 x 0.25 sq. deg. ~0.0625*density points will be returned.
@@ -396,19 +402,19 @@ def get_quantities_in_a_brick(ramin, ramax, decmin, decmax, brickname, direc,
                                               seed=seed)
 
     qdict = quantities_at_positions_in_a_brick(ras, decs, brickname,
-                                               direc, aprad=aprad)
+                                               direc, filters, aprad=aprad)
 
     # ADM Some choices for filter names. Default to ODIN filters...
     filters = ['N419']
     if np.any(['N501' in k or 'N673' in k for k in qdict.keys()]):
         filters += ['N501', 'N673']
     # ADM ...different filters if we're using Suprime-Cam.
-    if "suprime" in direc:
-        filters = ['I-A-L427', 'I-A-L464', 'I-A-L484', 'I-A-L505', 'I-A-L527']
+    # if "suprime" in direc:
+    #     filters = ['I-A-L427', 'I-A-L464', 'I-A-L484', 'I-A-L505', 'I-A-L527']
 
     # ADM the dtype of the structured array to output.
     dt = [('BRICKID', '>i4'), ('BRICKNAME', 'U8'), ('OBJID', '>i4'), ('RA', '>f8'),
-          ('DEC', 'f8'), ('EBV', 'f4'), ('MASKBITS', '<i4'), ('IN_ARJUN_MASK', '?')]
+          ('DEC', 'f8'), ('EBV', 'f4'), ('MASKBITS', '<i4')]
 
     for filt in filters:
         dt += [(f'NOBS_{filt}', '<i2'), (f'PSFDEPTH_{filt}', '<f4'),
@@ -440,7 +446,7 @@ def get_quantities_in_a_brick(ramin, ramax, decmin, decmax, brickname, direc,
     return qinfo
 
 
-def select_randoms_bricks(brickdict, bricknames, direc, density=100000,
+def select_randoms_bricks(brickdict, bricknames, direc, filters, density=100000,
                           numproc=32, dustdir=None, aprad=0.75, seed=1):
 
     """Parallel-process a random catalog for a set of brick names.
@@ -455,6 +461,9 @@ def select_randoms_bricks(brickdict, bricknames, direc, density=100000,
     direc : :class:`str`
        The root directory pointing to a set of Legacy-Surveys-like imaging
        files, e.g., /global/cfs/cdirs/cosmo/work/users/dstn/ODIN/xmm-N419/coadd/
+    filters : :class:`list`
+        List of filters for which to retrieve observational quantities, e.g.
+        ['N419', 'N501', 'N673'].
     density : :class:`int`, optional, defaults to 100,000
         Number of random points to return per sq. deg. As a brick is
         ~0.25 x 0.25 sq. deg. ~0.0625*density points will be returned.
@@ -491,6 +500,7 @@ def select_randoms_bricks(brickdict, bricknames, direc, density=100000,
         # ADM quantities of interest at those locations.
         randoms = get_quantities_in_a_brick(
             bramin, bramax, bdecmin, bdecmax, brickname, direc=direc,
+            filters=filters,
             density=density, dustdir=dustdir, aprad=aprad, seed=seed)
 
         return randoms
@@ -534,7 +544,7 @@ def select_randoms_bricks(brickdict, bricknames, direc, density=100000,
     return qinfo
 
 
-def select_randoms(direc,
+def select_randoms(direc, filters,
                    density=100000, numproc=32, dustdir=None, aprad=0.75, seed=1):
     """NOBS, DEPTHs (per-band), MASKs for random points in a Legacy Surveys DR.
 
@@ -543,6 +553,9 @@ def select_randoms(direc,
     direc : :class:`str`
        The root directory pointing to a set of Legacy-Surveys-like imaging
        files, e.g., /global/cfs/cdirs/cosmo/work/users/dstn/ODIN/xmm-N419/coadd/
+    filters : :class:`list`
+        List of filters for which to retrieve observational quantities, e.g.
+        ['N419', 'N501', 'N673'].
     density : :class:`int`, optional, defaults to 100,000
         Number of random points to return per sq. deg. As a brick is
         ~0.25 x 0.25 sq. deg. ~0.0625*density points will be returned.
@@ -579,14 +592,16 @@ def select_randoms(direc,
 
     # ADM recover the pixel-level quantities in the DR bricks.
     randoms = select_randoms_bricks(
-        brickdict, bricknames, direc, density=density, numproc=numproc,
+        brickdict, bricknames, direc, filters, density=density, numproc=numproc,
         dustdir=dustdir, aprad=aprad, seed=seed)
 
     # ADM retrieve whether the random location was in a bright star mask.
     # ADM there's no point parallelizing this, it's very fast.
-    inMx, Mxfn = is_in_gaia_mask(randoms["RA"], randoms["DEC"])
+    # inMx, Mxfn = is_in_gaia_mask(randoms["RA"], randoms["DEC"])
     # ADM add whether the location is in a bright star mask.
-    randoms["IN_ARJUN_MASK"] = inMx
+    # randoms["IN_ARJUN_MASK"] = inMx
+    # To keep the return value consistent
+    Mxfn = None
 
     # ADM one last shuffle to randomize across brick boundaries.
     np.random.seed(615+seed)

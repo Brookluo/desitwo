@@ -76,7 +76,9 @@ hdr["SEED"] = ns.seed
 hdr["DENSITY"] = ns.density
 hdr["APRAD"] = ns.aprad
 
-rands, Mxfn = select_randoms(ns.direc, density=ns.density, numproc=ns.numproc,
+# IBIS filters
+filters = ['M411', 'M438', 'M464', 'M490', 'M517']
+rands, Mxfn = select_randoms(ns.direc, filters, density=ns.density, numproc=ns.numproc,
                              dustdir=ns.dustdir, aprad=ns.aprad)
 
 # ADM useful to know which input files were used.
