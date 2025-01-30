@@ -405,9 +405,9 @@ def get_quantities_in_a_brick(ramin, ramax, decmin, decmax, brickname, direc, fi
                                                direc, filters, aprad=aprad)
 
     # ADM Some choices for filter names. Default to ODIN filters...
-    filters = ['N419']
-    if np.any(['N501' in k or 'N673' in k for k in qdict.keys()]):
-        filters += ['N501', 'N673']
+    # filters = ['N419']
+    # if np.any(['N501' in k or 'N673' in k for k in qdict.keys()]):
+    #     filters += ['N501', 'N673']
     # ADM ...different filters if we're using Suprime-Cam.
     # if "suprime" in direc:
     #     filters = ['I-A-L427', 'I-A-L464', 'I-A-L484', 'I-A-L505', 'I-A-L527']
