@@ -27,7 +27,7 @@ def get_tractor_data(rootdir, outdir=None):
 
 if __name__ == '__main__':
     rootdir = sys.argv[1]
-    outdir = None if len(sys.argv) > 2 else sys.argv[2]
+    outdir = sys.argv[2] if len(sys.argv) > 2 else None
     print('Getting tractor data...',
           '\nRoot directory:', rootdir,
           '\nOutput directory', outdir
