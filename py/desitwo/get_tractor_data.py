@@ -2,6 +2,7 @@ from pathlib import Path
 import sys
 import numpy as np
 from astropy.table import Table
+import pickle
 
 
 def get_tractor_data(rootdir, outdir=None):
@@ -21,8 +22,10 @@ def get_tractor_data(rootdir, outdir=None):
         outdir = Path(outdir)
         outdir.mkdir(exist_ok=True)
         np.save(outdir / 'bricks.npy', bricks)
-        np.save(outdir / 'coords.npy', datcoords)    
-    return bricks, datcoords
+        np.save(outdir / 'allcoords.npy', datcoords)
+        with open(outdir / 'coords.pkl', 'wb') as f:
+            pickle.dump(coords, f)
+    return bricks, coords, datcoords
 
 
 if __name__ == '__main__':
